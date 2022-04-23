@@ -1,0 +1,153 @@
+<html>
+<head> 
+
+  <title>The BookShelf</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Development version of VueJS -->
+  <script src="https://unpkg.com/vue@next"></script> 
+  <!-- Axios for making HTTP requests.  -->
+  <script src="https://unpkg.com/axios@0.24.0/dist/axios.min.js"></script>
+
+  <!-- Google Icons -->
+  <link rel="stylesheet" href="https://fonts.sandbox.google.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,1,0" />
+  
+  <!-- Adobe Fonts  -->
+  <link rel="stylesheet" href="https://use.typekit.net/ybk6uue.css">
+
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Base 64 inline favicon generated at https://png-pixel.com/ -->
+  <link rel="shortcut icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNMPvnxPwAG0gMeEo1rnwAAAABJRU5ErkJggg==">
+
+  <!-- Our VueJS app -->
+  <script defer src="script.js"></script>
+
+</head>
+<body id="app">
+ 
+    
+  <!-- Ask for the user's name if needed -->
+  <section v-if="!bookshelf.reader" id="hello">
+    <a class="logo" href="#"><img src="img/logo.png" class="logoStart"></a>
+    <form @submit.prevent="hello">
+      <input type="text" v-model="myNameIs" placeholder="Who's Reading?">
+      <button>Submit</button> 
+    </form>
+  </section>
+
+  <!-- After the user provides their name, show the navigation -->
+  <!-- Fake nav elements have been included for appearence only as they are not a part of the MVP -->
+  <nav v-if="bookshelf.reader" id="navigation" class="overlay">
+    <a class="logo" href="#" @click="clearSearch()"><img src="img/logo.png" style="width: 100%;"></a>
+    <form>
+      <button class="searchBtnX"><span class="material-symbols-outlined">search</span></button>
+      <input type="text" placeholder="Search the Bookshelf" class="searchX">
+    </form>
+    <button class="filterX"><span class="span">Add Filters</span><span class="material-symbols-outlined span">
+      filter_alt</span></button>
+      <button class="collectionX"><span class="span">Add Collection</span><span class="material-symbols-outlined span">
+        add_circle</span></button>
+    <!-- Button to Add Book -->
+    <div class="bookBtn">  
+    <img src="img/add-book.png" id="searchBox" @click="searchBox()" style="width: 100%;">
+  </div>  
+  </nav>
+  <nav v-if="bookshelf.reader" id="navigation2" class="overlay two">
+    <p class="collectionsX gar active">All Books</p>
+    <p class="collectionsX gar">Favourites</p>
+    <p class="collectionsX gar">Classics</p>
+  </nav>
+
+  
+  <div v-if="showForm" class="darken">
+    <div class="formBox">
+      <div class="header">
+        <div class="bookmark"><img src="img/bookmark.png" style="width: 100%;"></div>
+        <p class="add gar">Add New Book</p>
+      </div>
+      <!-- Search form handled by "search" function in VueJS. -->
+      <form v-if="showForm && !showBooks" id="findBooks"  @submit.prevent="search">
+        <input type="text" v-model="searchFilter" class="formInput" placeholder="Book Title"></br>
+        <input type="text" v-model="searchAuthor" placeholder="Book Author" class="formInput"></br>
+        <button @click="search()" class="searchBtn gar">Search</button>
+      </form>
+
+      <!-- Showing Books the match the user's search -->
+      <section v-if="results && !a" id="resultsArea">
+        <div id="results">
+          <div v-for="book in results" class="result"  @click="add(book)"> 
+            <div class="book">
+            <div class="circle" v-if="book.volumeInfo.imageLinks">
+              <img :src="book.volumeInfo.imageLinks.thumbnail" @error="skip(book)">
+            </div> 
+            <h3>{{book.volumeInfo.title}}</h3>
+          </div>
+        </div>
+        </div>
+      </section>
+
+        <!-- After User selects a book they are able to alter the existing information before saving it to their bookshelf-->
+        <section v-if="a" id="shelf"> 
+            <div class="image" v-if="book2.volumeInfo.imageLinks">
+              <img :src="book2.volumeInfo.imageLinks.thumbnail" style="width: 100%;" @error="skip(book)">
+            </div> 
+            <form id="changes"  @submit.prevent="search">
+            <div class="group">
+              <p class="label">TITLE:</p>
+              <input type="text" v-model="book2.volumeInfo.title" class="changeInput">
+            </div>
+            <div class="group">
+              <p class="label">AUTHOR:</p>
+              <input type="text" v-model="book2.volumeInfo.authors[0]" class="changeInput">
+            </div>
+            <div class="group">
+              <p class="label">DATE PUBLISHED:</p>
+              <input type="text" v-model="book2.volumeInfo.publishedDate" class="changeInput">
+            </div>
+            <div class="group">
+              <p class="label">PAGES:</p>
+              <input type="text" v-model="book2.volumeInfo.pageCount" class="changeInput">
+            </div>
+            <div class="group des">
+              <p class="label">DESCRIPTION:</p>
+              <textarea v-model="book2.volumeInfo.description" name="Bio" class="changeInput" id="bio_text" rows="4">{{ book2.volumeInfo.description }}</textarea>
+            </div>
+            
+            <button @click="goBack()" id="close">Cancel</button>
+            <button class="saveBook gar" @click="shelf(book2)"> Save Book </button>
+            </form>
+        </section> 
+    </div>
+  </div>
+
+ <!-- A place to display notices and errors. -->
+ <section v-if="notice" id="notice">
+  <div> {{ notice }}</div>
+</section>
+
+  <!-- If there are any search results, they will appear here -->
+  
+
+  <!-- Show the user's bookshelf  -->
+  <section v-if="bookshelf.items.length" id="bookshelf"> 
+    <div v-for="book in bookshelf.items" class="books">
+      <div class="circle" v-if="book.volumeInfo.imageLinks">
+        <img :src="book.volumeInfo.imageLinks.thumbnail" @error="skip(book)" class="bookImg">
+      </div> 
+      <button class="remove" @click="remove(book)"> <span class="material-symbols-outlined">delete_forever</span> </button>
+    </div> 
+  </section> 
+
+  <!-- If the user entered their name but doesnt have any books yet, show the message-->
+  <div id="emptyBookshelf" v-if="bookshelf.reader && !bookshelf.items.length">
+    <p>Ready to Open a New Book?</p>
+  </div>
+ 
+  <footer>
+    <div id="credits">Made by Julia. Powered by <a href="https://developers.google.com/books">Google Books API.</a> Persistent data created with <a href="https://www.mongodb.com/">MongoDB</a>. Code Adapted from <a href="https://github.com/nsitu/Plot">Harold</a>. Backend written with <a href="https://nodejs.org/">NodeJS</a> and <a href="https://expressjs.com/">Express</a>. Frontend written with <a href="https://vuejs.org/">VueJS</a>. Hosted by Heroku. </div>
+  </footer>
+
+</body>
+</html>
